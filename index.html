@@ -9,7 +9,7 @@
 		attribute vec4 a_position;
 		
 		void main(){
-			gl_Position = a_position //gl_position is special variable in vertex shader	
+			gl_Position = a_position; //gl_position is special variable in vertex shader	
 		}		
 	</script>
 	<script id="2d-fragment-shader" type="notjs">
@@ -18,17 +18,24 @@
 		
 		void main(){
 			//gl_Fragcolor is special var for fragment shader
-			gl_Fragcolor = vec4(1,0,0.5,1); //r,g,b,a	
+			gl_FragColor = vec4(1.0, 0.0, 0.5, 1.0);
 		}		
-	</script>	
+	</script>
+
+	<style>
+		#canvas {
+			width: 400px,
+			height: 300px
+		}
+	</style>
 </head>
 
 <body>
-	<canvas id="canvas"></canvas>
+	<canvas id="canvas" width="400" height="300"></canvas>
 	
 	<script>
 		var canvas = document.getElementById('canvas');
-		var gl = canvas.getConrext('webgl');
+		var gl = canvas.getContext('webgl');
 		
 		////////////////////////////////
 		//Initialization functions
@@ -39,7 +46,7 @@
 			var shader = gl.createShader(type);
 			gl.shaderSource(shader, source);
 			gl.compileShader(shader)
-			if(gl.shaderParameter(shader,gl.COMPILE_STATUS)){
+			if(gl.getShaderParameter(shader,gl.COMPILE_STATUS)){
 				return shader;				
 			}
 			gl.deleteShader(shader)			
@@ -51,7 +58,7 @@
 			gl.attachShader(program, vertShader);
 			gl.attachShader(program, fragShader);
 			gl.linkProgram(program);
-			if(gl.getProgramParameter(gl, gl.LINK_STATUS)){
+			if(gl.getProgramParameter(program, gl.LINK_STATUS)){
 				return program;
 				gl.deleteProgram(program);
 			}
@@ -75,7 +82,7 @@
 		
 		//point to location of the attribute "a_position" in GLSL program
 		//do it on reset! Not in runtime!
-		var positionAttributeLocation = gl.getAttributeLocation(program, 'a_position');		
+		var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');		
 		
 		//create buffer for positions and bind it to bindPoint gl.ARRAY_BUFFER
 		//bind point is like global variable inside WebGL
@@ -92,6 +99,48 @@
 		//WebGL can try to use that hint to optimize certain things. 
 		//gl.STATIC_DRAW tells WebGL we are not likely to change this data much.
 		
+		////////////////////////////////
+		//Draw
+		////////////////////////////////
+		
+		//convert coordinates from clip space to screen space
+		//clipace: -1 to +1
+		//   to
+		//screenspace: 0 to canvas width, 0 to canvas height
+		gl.viewport(0,0,gl.canvas.width, gl.canvas.height);
+		
+		//clear canvas
+		gl.clearColor(0,0,0,0);
+		gl.clear(gl.COLOR_BUFFER_BIT);
+		
+		//specify shader program
+		gl.useProgram(program);
+		
+		//tell WebGL how to take data from the buffer "positionBuffer" 
+		//and put it to the attribute of the shader
+		gl.enableVertexAttribArray(positionAttributeLocation) //turn on the attribute on given location
+		
+		//bind position buffer
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		
+		//tell the attribute "a_position" how  to get data from the buffer "positionBuffer"
+		var offset = 0;		//start at the beginning (no offset)
+		var size = 2; 		//take 2 components per iteration
+		var type = gl.FLOAT;//of type 32bit float
+		var normalize = false;//without normalizing the data
+		var stride = 0;		//then move to 64bit (sizeof(type)*size: 32bit*2)
+		gl.vertexAttribPointer(positionAttributeLocation, size,type, normalize, stride, offset);
+		//a_position is now binded to positionBuffer
+		//positionBuffer and a_position are in different worlds
+		//positionBuffer sends a message
+		//ARRAY_BUFFER is like radio beacon
+		//a_position is like reciever
+		
+		//execute program
+		var count = 3; 						//execute shadet 3 times
+		var primitiveType = gl.TRIANGLES;	//draw triangle
+		var offset = 0;						
+		gl.drawArrays(primitiveType,offset,count)
 		
 		
 		
