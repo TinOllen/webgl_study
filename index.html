@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+    <title>webgl study</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+	<script id="2d-vertex-shader" type="notjs">
+		//attribute resieves data from buffer
+		attribute vec4 a_position;
+		
+		void main(){
+			gl_Position = a_position //gl_position is special variable in vertex shader	
+		}		
+	</script>
+	<script id="2d-fragment-shader" type="notjs">
+		//adding precision
+		precision mediump float;
+		
+		void main(){
+			//gl_Fragcolor is special var for fragment shader
+			gl_Fragcolor = vec4(1,0,0.5,1); //r,g,b,a	
+		}		
+	</script>	
+</head>
+
+<body>
+	<canvas id="canvas"></canvas>
+	
+	<script>
+		var canvas = document.getElementById('canvas');
+		var gl = canvas.getConrext('webgl');
+		
+		////////////////////////////////
+		//Initialization functions
+		////////////////////////////////
+		
+		//create [shader] of a given [type] from a given [source] and compile it
+		function createShader(gl, type, source){
+			var shader = gl.createShader(type);
+			gl.shaderSource(shader, source);
+			gl.compileShader(shader)
+			if(gl.shaderParameter(shader,gl.COMPILE_STATUS)){
+				return shader;				
+			}
+			gl.deleteShader(shader)			
+		}
+		
+		//create a program from 2 shaders (attach shaders then link program on gpu)
+		function createProgram(gl, vertShader, fragShader){
+			var program = gl.createProgram();
+			gl.attachShader(program, vertShader);
+			gl.attachShader(program, fragShader);
+			gl.linkProgram(program);
+			if(gl.getProgramParameter(gl, gl.LINK_STATUS)){
+				return program;
+				gl.deleteProgram(program);
+			}
+		}
+		
+		
+		////////////////////////////////
+		//Initialization
+		////////////////////////////////
+		
+		//create vertex and fragment shaders from script tags
+		var vertShaderSource = document.getElementById('2d-vertex-shader').text;
+		var fragShaderSource = document.getElementById('2d-fragment-shader').text;
+		
+		var vertShader = createShader(gl, gl.VERTEX_SHADER, vertShaderSource);
+		var fragShader = createShader(gl, gl.FRAGMENT_SHADER, fragShaderSource);
+		
+		//create and link program
+		var program = createProgram(gl, vertShader, fragShader);
+		//GLSL program has been created on the GPU, but there's no data now
+		
+		//point to location of the attribute "a_position" in GLSL program
+		//do it on reset! Not in runtime!
+		var positionAttributeLocation = gl.getAttributeLocation(program, 'a_position');		
+		
+		//create buffer for positions and bind it to bindPoint gl.ARRAY_BUFFER
+		//bind point is like global variable inside WebGL
+		var positionBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		
+		//create array of positions and put them to a buffer through a bind point gl.ARRAY_BUFFER
+		var positions = [
+			0,0,
+			0,0.5,
+			0.7,0 ];
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+		//gl.STATIC_DRAW is a hint to WebGL about how we'll use the data. 
+		//WebGL can try to use that hint to optimize certain things. 
+		//gl.STATIC_DRAW tells WebGL we are not likely to change this data much.
+		
+		
+		
+		
+	</script>
+
+</body>
+</html>
